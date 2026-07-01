@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!--
+      来源：用户提供的文件夹 SVG（viewBox 0 0 1025 896）。
+      通过 group 缩放并居中到 108 viewport：
+      scale = 60/1025 ≈ 0.0585，缩放后约 60×52，居中于安全区内。
+      配色用品牌青绿 #006B5B，与白底形成对比。
+    -->
+    <group
+        android:scaleX="0.0585"
+        android:scaleY="0.0585"
+        android:translateX="24"
+        android:translateY="27.8">
+        <path
+            android:fillColor="#006B5B"
+            android:pathData="M1024.526,768 q0,53 -37.5,90.5 t-90.5,37.5 h-768 q-53,0 -90.5,-37.5 T0.526,768 V256 q0,-26 18.5,-45 t45.5,-19 h480 q0,-12 11.5,-33 t22.5,-36 l12,-16 q7,-18 28,-30.5 t44,-12.5 h240 q24,0 45,12.5 t28,30.5 q49,58 49,85 z m-978,-725 q7,-18 28,-30.5 t44,-12.5 h240 q24,0 45,12.5 t29,30.5 l48,85 h-480 z" />
+    </group>
+</vector>

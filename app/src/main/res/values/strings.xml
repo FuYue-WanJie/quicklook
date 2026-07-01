@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">快览</string>
+    <string name="permission_required">需要存储权限才能浏览文件</string>
+    <string name="grant_permission">授予权限</string>
+    <string name="empty_folder">空文件夹</string>
+    <string name="back">返回上级</string>
+    <string name="root">根目录</string>
+</resources>
