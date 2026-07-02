@@ -1,6 +1,8 @@
 package wanjie.quicklook.ui
 
 import android.os.Environment
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +39,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,6 +67,8 @@ private enum class AppScreen { FILES, SETTINGS, TEXT_EDITOR, IMAGE_VIEWER }
 
 private data class QuickLocation(val label: String, val icon: ImageVector, val path: () -> File?)
 
+private const val EXIT_PRESS_INTERVAL = 2000L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppRoot(
@@ -72,9 +78,12 @@ fun AppRoot(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var screen by rememberSaveable { mutableStateOf(AppScreen.FILES) }
     var openedFilePath by rememberSaveable { mutableStateOf<String?>(null) }
     val openedFile: File? get() = openedFilePath?.let(::File)
+    var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    val fileState by fileViewModel.state.collectAsStateWithLifecycle()
 
     /**
      * 文件点击路由：文本类用内置编辑器，图片类用内置查看器，其余交给第三方应用。
@@ -94,10 +103,33 @@ fun AppRoot(
         }
     }
 
-    // 设置变化时刷新文件列表（例如切换“显示隐藏文件夹”后立即生效）
+    // 设置变化时刷新文件列表（例如切换"显示隐藏文件夹"后立即生效）
     val settings by settingsViewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(settings.showHidden) {
         fileViewModel.refresh()
+    }
+
+    // 返回键拦截
+    BackHandler {
+        when (screen) {
+            AppScreen.FILES -> {
+                if (fileState.canGoUp) {
+                    fileViewModel.goUp()
+                } else {
+                    val now = System.currentTimeMillis()
+                    if (now - lastBackPressTime < EXIT_PRESS_INTERVAL) {
+                        (context as? android.app.Activity)?.finish()
+                    } else {
+                        lastBackPressTime = now
+                        Toast.makeText(context, "再按一次退出应用", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            AppScreen.SETTINGS, AppScreen.TEXT_EDITOR, AppScreen.IMAGE_VIEWER -> {
+                screen = AppScreen.FILES
+                openedFilePath = null
+            }
+        }
     }
 
     val quickLocations = remember {

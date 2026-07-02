@@ -24,6 +24,7 @@ import wanjie.quicklook.ui.AppRoot
 import wanjie.quicklook.ui.theme.QuickLookTheme
 import wanjie.quicklook.viewmodel.FileViewModel
 import wanjie.quicklook.viewmodel.SettingsViewModel
+import kotlin.system.exitProcess
 import java.io.File
 
 class MainActivity : ComponentActivity() {
