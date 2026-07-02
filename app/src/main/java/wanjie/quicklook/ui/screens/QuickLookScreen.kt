@@ -1,12 +1,17 @@
 package wanjie.quicklook.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
@@ -97,12 +102,9 @@ fun QuickLookScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            text = state.currentPath.ifEmpty { "—" },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                        PathBreadcrumb(
+                            path = state.currentPath,
+                            onSegmentClick = { viewModel.open(it) },
                         )
                     }
                 },
@@ -253,5 +255,68 @@ private fun EmptyState(text: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun PathBreadcrumb(
+    path: String,
+    onSegmentClick: (File) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (path.isEmpty()) {
+        Text(
+            text = "—",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        return
+    }
+
+    val segments = remember(path) {
+        buildList {
+            var current = File(path)
+            while (true) {
+                add(0, current)
+                current = current.parentFile ?: break
+            }
+        }
+    }
+    val scrollState = rememberScrollState()
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .horizontalScroll(scrollState)
+            .fillMaxWidth(),
+    ) {
+        segments.forEachIndexed { index, file ->
+            Text(
+                text = file.name.ifEmpty { "/" },
+                style = MaterialTheme.typography.labelMedium,
+                color = if (index == segments.lastIndex)
+                    MaterialTheme.colorScheme.onSurface
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .clickable(
+                        enabled = index != segments.lastIndex,
+                        onClick = { onSegmentClick(file) },
+                    )
+                    .padding(horizontal = 2.dp),
+            )
+            if (index < segments.lastIndex) {
+                Text(
+                    text = "/",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
