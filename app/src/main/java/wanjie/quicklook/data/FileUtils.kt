@@ -7,8 +7,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
+import android.content.ContentResolver
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -215,7 +217,14 @@ object FileUtils {
         )
         val out = mutableListOf<FileItem>()
         val coll = MediaStore.Files.getContentUri("external")
-        context.contentResolver.query(coll, proj, null, null, "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC LIMIT $limit")?.use { c ->
+        val bundle = Bundle().apply {
+            putString(
+                ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
+                "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC",
+            )
+            putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
+        }
+        context.contentResolver.query(coll, proj, bundle, null)?.use { c ->
             val idCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val dataCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
             val nameCol = c.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
