@@ -57,6 +57,7 @@
 - GitHub Issue / Pull Request：<https://github.com/FuYue-WanJie/quicklook>
 - 邮箱：kittenfeelfish@hotmail.com、wanjiestudio@163.com、linx20770@gmail.com
 - 作者在 B 站、抖音、快手、Solar Network、Telegram 等平台均有账号，可搜索「符跃-万界」「符跃 万界」「FuYue-WanJie」「FuYue_WanJie」找到我
+- 提示：本人在 X（Twitter）上的账号刚注册就被封了，无法通过 X 联系；其他平台搜不到，那就是真的还没注册或我记错了
 
 ## 作者
 
