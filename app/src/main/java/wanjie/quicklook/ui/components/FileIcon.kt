@@ -42,7 +42,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import androidx.core.graphics.drawable.toBitmap
 import coil.compose.AsyncImage
 import wanjie.quicklook.data.FileCategory
@@ -62,13 +64,13 @@ private object ApkIconCache {
     fun get(path: String): ImageBitmap? = cache[path]
     fun isTried(path: String): Boolean = path in tried
 
-    suspend fun load(context: android.content.Context, path: String): ImageBitmap? {
+    suspend fun load(context: android.content.Context, path: String, targetPx: Int): ImageBitmap? {
         if (path in cache) return cache[path]
         tried.add(path)
         // Drawable 非线程安全，加载与转 Bitmap 都在 IO 线程完成
         val bitmap = withContext(Dispatchers.IO) {
             val drawable = FileUtils.loadApkIcon(context, path)
-            drawable?.toBitmap(96, 96)?.asImageBitmap()
+            drawable?.toBitmap(targetPx, targetPx)?.asImageBitmap()
         }
         cache[path] = bitmap
         return bitmap
@@ -95,14 +97,16 @@ fun FileIcon(
     val (container, onContainer) = categoryColors(category)
     val vector = vectorFor(category)
     val context = LocalContext.current
+    val density = LocalDensity.current
 
-    // APK 图标异步加载（带内存缓存）
+    // APK 图标异步加载（带内存缓存，目标尺寸按 density 超采样保证清晰）
     var apkIcon by remember(path) {
         mutableStateOf(if (path != null) ApkIconCache.get(path) else null)
     }
     if (category == FileCategory.APP && path != null && apkIcon == null && !ApkIconCache.isTried(path)) {
-        LaunchedEffect(path) {
-            apkIcon = ApkIconCache.load(context, path)
+        LaunchedEffect(path, size) {
+            val targetPx = with(density) { (size * 2).dp.toPx().roundToInt() }
+            apkIcon = ApkIconCache.load(context, path, targetPx)
         }
     }
 

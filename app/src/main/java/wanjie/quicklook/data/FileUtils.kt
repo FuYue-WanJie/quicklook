@@ -433,7 +433,7 @@ object FileUtils {
      */
     fun loadApkIcon(context: Context, path: String): Drawable? {
         val pm = context.packageManager
-        val pkg = pm.getPackageArchiveInfo(path, 0) ?: return null
+        val pkg = queryArchiveInfo(pm, path, 0) ?: return null
         val appInfo = pkg.applicationInfo ?: return null
         // 同上：必须手动设置 sourceDir/publicSourceDir，否则 loadIcon 返回默认系统图标或失败
         appInfo.sourceDir = path
