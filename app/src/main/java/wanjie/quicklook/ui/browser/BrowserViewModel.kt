@@ -62,6 +62,12 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /** SAF 失效提示的主体应用名：优先取 provider 应用名，解析失败时用通用名 */
+    private fun safProviderName(treeUri: String): String {
+        return safManager.providerName(treeUri)
+            ?: getApplication<Application>().getString(R.string.snack_saf_provider_fallback)
+    }
+
     /** 关闭对话框并刷新当前目录 */
     private suspend fun dismissAndRefresh() {
         val state = _uiState.value
@@ -558,7 +564,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
             // 校验权限仍有效
             val treeUri = Uri.parse(bookmark.treeUri)
             if (!safManager.isAuthorized(treeUri)) {
-                snack(R.string.snack_saf_permission_lost, getApplication<Application>().getString(R.string.app_name))
+                snack(R.string.snack_saf_permission_lost, safProviderName(bookmark.treeUri))
                 return@launch
             }
             val root = StorageRoot(
@@ -649,7 +655,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
                     loadState = BrowserLoadState.Error,
                     errorMessage = getApplication<Application>().getString(
                         R.string.snack_saf_app_not_started,
-                        getApplication<Application>().getString(R.string.app_name),
+                        safProviderName(uri),
                     ),
                     currentRoot = root,
                 )

@@ -129,6 +129,15 @@ class SafManager(private val context: Context) {
     /** 判断 URI 是否为目录 */
     fun isDirectory(uri: String): Boolean = resolve(uri)?.isDirectory == true
 
+    /** 解析提供该 SAF 目录的 provider 应用名（通过 authority 找到应用 label） */
+    fun providerName(uri: String): String? = runCatching {
+        val authority = Uri.parse(uri).authority ?: return null
+        val pm = context.packageManager
+        pm.resolveContentProvider(authority, 0)
+            ?.applicationInfo
+            ?.let { pm.getApplicationLabel(it).toString() }
+    }.getOrNull()
+
     private fun resolve(uri: String): DocumentFile? {
         val u = uri.toUri()
         return runCatching {

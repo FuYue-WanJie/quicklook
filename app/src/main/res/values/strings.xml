@@ -133,6 +133,7 @@
     <string name="snack_saf_added">已添加 SAF 目录「%1$s」</string>
     <string name="snack_saf_permission_lost">%1$s应用未启动，请先启动应用再尝试访问</string>
     <string name="snack_saf_app_not_started">%1$s应用未启动，请先启动应用再尝试访问</string>
+    <string name="snack_saf_provider_fallback">SAF 应用</string>
 
     <!-- APK 详情 -->
     <string name="apk_package">包名</string>
