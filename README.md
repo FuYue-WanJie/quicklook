@@ -25,6 +25,11 @@
 - Coil（图片加载）、Media3 / ExoPlayer（播放）
 - Zip4j、7-Zip-JBinding（压缩包）、Amplituda（音频波形）
 
+## 参考项目
+
+- [柠檬音乐](https://github.com/yangSpica27/SPICaMusic_Android)：参考实现音乐播放器（音频播放与波形可视化）
+- [质感文件 (Material Files)](https://github.com/zhanghai/MaterialFiles)：参考实现文件浏览与管理交互
+
 ## 构建
 
 环境要求：
