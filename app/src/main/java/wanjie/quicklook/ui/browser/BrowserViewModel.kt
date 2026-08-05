@@ -558,7 +558,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
             // 校验权限仍有效
             val treeUri = Uri.parse(bookmark.treeUri)
             if (!safManager.isAuthorized(treeUri)) {
-                snack(R.string.snack_saf_permission_lost)
+                snack(R.string.snack_saf_permission_lost, getApplication<Application>().getString(R.string.app_name))
                 return@launch
             }
             val root = StorageRoot(
@@ -642,6 +642,20 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
     private suspend fun refreshSaf(root: StorageRoot, path: String?) {
         val uri = path ?: root.uri.toString()
         _uiState.update { it.copy(loadState = BrowserLoadState.Loading, currentRoot = root) }
+        val accessible = withContext(kotlinx.coroutines.Dispatchers.IO) { safManager.isDirectory(uri) }
+        if (!accessible) {
+            _uiState.update {
+                it.copy(
+                    loadState = BrowserLoadState.Error,
+                    errorMessage = getApplication<Application>().getString(
+                        R.string.snack_saf_app_not_started,
+                        getApplication<Application>().getString(R.string.app_name),
+                    ),
+                    currentRoot = root,
+                )
+            }
+            return
+        }
         val items = withContext(kotlinx.coroutines.Dispatchers.IO) {
             safManager.listDirectory(uri, _uiState.value.sortConfig, _uiState.value.showHidden)
         }

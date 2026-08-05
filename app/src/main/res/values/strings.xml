@@ -131,7 +131,8 @@
     <string name="snack_bookmark_unavailable">当前目录无法加入书签</string>
     <string name="snack_bookmark_invalid">书签路径无效</string>
     <string name="snack_saf_added">已添加 SAF 目录「%1$s」</string>
-    <string name="snack_saf_permission_lost">SAF 访问权限已失效，请重新授权</string>
+    <string name="snack_saf_permission_lost">%1$s应用未启动，请先启动应用再尝试访问</string>
+    <string name="snack_saf_app_not_started">%1$s应用未启动，请先启动应用再尝试访问</string>
 
     <!-- APK 详情 -->
     <string name="apk_package">包名</string>
