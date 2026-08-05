@@ -12,7 +12,7 @@ android {
         applicationId = "wanjie.quicklook"
         minSdk = 26
         targetSdk = 35
-        versionCode = 20260715
+        versionCode = 20260805
         versionName = "2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
