@@ -5,6 +5,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.VideoFrameDecoder
 import wanjie.quicklook.data.BookmarkStore
+import wanjie.quicklook.data.CrashTracker
 import wanjie.quicklook.data.SafManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,8 @@ class QuickLookApp : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        // 全局崩溃捕获：未处理异常转至崩溃展示页
+        CrashTracker.install(this)
         // 首次启动播种默认书签
         appScope.launch { bookmarkStore.seedDefaultsIfEmpty() }
     }

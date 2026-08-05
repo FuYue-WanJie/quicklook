@@ -7,28 +7,36 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -54,7 +63,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -81,7 +92,6 @@ import wanjie.quicklook.ui.viewer.TextEditorScreen
 import wanjie.quicklook.ui.viewer.VideoPlayerScreen
 import wanjie.quicklook.ExternalCategory
 import wanjie.quicklook.ExternalView
-import java.io.File
 import java.util.Base64
 import android.os.Environment
 import kotlinx.coroutines.launch
@@ -90,6 +100,7 @@ private object Routes {
     const val BROWSER = "browser"
     const val RECENT = "recent"
     const val SETTINGS = "settings"
+    const val ABOUT = "about"
     const val IMAGE = "image/{path}/{name}"
     const val VIDEO = "video/{path}/{name}"
     const val AUDIO = "audio/{path}/{name}"
@@ -206,7 +217,7 @@ fun QuickLookRoot(initialExternalView: ExternalView? = null) {
                         StandardDir(R.string.dir_music, Environment.DIRECTORY_MUSIC, Icons.Rounded.MusicNote),
                         StandardDir(R.string.dir_movies, Environment.DIRECTORY_MOVIES, Icons.Rounded.Movie),
                         StandardDir(R.string.dir_documents, Environment.DIRECTORY_DOCUMENTS, Icons.Rounded.Description),
-                    ).filter { File(Environment.getExternalStoragePublicDirectory(it.dirName)).exists() }
+                    ).filter { Environment.getExternalStoragePublicDirectory(it.dirName).exists() }
                 }
 
                 LazyColumn(modifier = Modifier.fillMaxHeight()) {
@@ -331,6 +342,22 @@ fun QuickLookRoot(initialExternalView: ExternalView? = null) {
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
                         )
                     }
+                    item {
+                        NavigationDrawerItem(
+                            label = { Text(stringResource(R.string.nav_about)) },
+                            selected = currentRoute == Routes.ABOUT,
+                            onClick = {
+                                closeDrawer()
+                                navController.navigate(Routes.ABOUT) {
+                                    popUpTo(Routes.BROWSER) { inclusive = false }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(Icons.Rounded.Info, contentDescription = null) },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
         },
@@ -382,6 +409,9 @@ fun QuickLookRoot(initialExternalView: ExternalView? = null) {
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen(onOpenDrawer = { openDrawer() })
+            }
+            composable(Routes.ABOUT) {
+                AboutScreen(onOpenDrawer = { openDrawer() })
             }
             viewerRoute(Routes.IMAGE, navController) { p, n, b -> ImageViewerScreen(p, n, b) }
             viewerRoute(Routes.VIDEO, navController) { p, n, b -> VideoPlayerScreen(p, n, b) }
@@ -525,5 +555,97 @@ private fun SettingsScreen(
             )
             HorizontalDivider()
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AboutScreen(onOpenDrawer: () -> Unit) {
+    val context = LocalContext.current
+    val versionName = remember {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: ""
+    }
+
+    Scaffold(
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(stringResource(R.string.nav_about)) },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(Icons.Rounded.Menu, contentDescription = stringResource(R.string.drawer_open))
+                    }
+                },
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) { padding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(40.dp))
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Visibility,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(48.dp),
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.headlineMedium,
+            )
+            if (versionName.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.about_version, versionName),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    AboutRow(stringResource(R.string.about_author), stringResource(R.string.about_author_name))
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = stringResource(R.string.about_copyright, java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AboutRow(label: String, value: String) {
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }

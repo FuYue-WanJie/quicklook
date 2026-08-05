@@ -5,6 +5,7 @@
     <string name="nav_recent">最近</string>
     <string name="nav_storage">存储</string>
     <string name="nav_settings">设置</string>
+    <string name="nav_about">关于</string>
 
     <!-- 浏览器 -->
     <string name="search_hint">搜索文件…</string>
@@ -167,4 +168,23 @@
     <string name="archive_confirm">确定</string>
     <string name="archive_extract_failed">提取文件失败</string>
     <string name="archive_entry_encrypted">加密条目</string>
+
+    <!-- 崩溃捕捉 -->
+    <string name="crash_title">应用异常</string>
+    <string name="crash_subtitle">快览遇到了一个意外错误</string>
+    <string name="crash_info_type">异常类型</string>
+    <string name="crash_info_thread">线程</string>
+    <string name="crash_info_message">错误信息</string>
+    <string name="crash_stack">崩溃详情</string>
+    <string name="crash_stack_empty">无堆栈信息</string>
+    <string name="crash_copy">复制日志</string>
+    <string name="crash_copy_done">已复制到剪贴板</string>
+    <string name="crash_restart">重启应用</string>
+    <string name="crash_exit">退出</string>
+
+    <!-- 关于 -->
+    <string name="about_version">版本 %1$s</string>
+    <string name="about_author">作者</string>
+    <string name="about_author_name">FuYue-WanJie</string>
+    <string name="about_copyright">© %1$d FuYue-WanJie</string>
 </resources>
