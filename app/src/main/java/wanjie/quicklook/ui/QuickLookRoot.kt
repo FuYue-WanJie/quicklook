@@ -507,7 +507,7 @@ private fun RecentScreen(
                 contentPadding = PaddingValues(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                items(files, key = { it.path }) { item ->
+                items(files, key = { it.uri.toString() + it.name }) { item ->
                     FileListItem(
                         item = item,
                         isSelected = false,
