@@ -55,6 +55,7 @@
 
 - QQ 交流群：980108235
 - GitHub Issue / Pull Request：<https://github.com/FuYue-WanJie/quicklook>
+- 邮箱：kittenfeelfish@hotmail.com、wanjiestudio@163.com、linx20770@gmail.com
 - 作者在 B 站、抖音、快手、Solar Network、Telegram 等平台均有账号
 
 ## 作者
