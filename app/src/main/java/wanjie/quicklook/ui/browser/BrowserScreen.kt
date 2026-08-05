@@ -605,9 +605,18 @@ private fun DetailsDialog(item: FileItem, onDismiss: () -> Unit) {
                             append(" (").append(info.versionCode).append(")")
                         }
                         DetailRow(stringResource(R.string.apk_version), ver)
-                        DetailRow(stringResource(R.string.apk_min_sdk), "API ${info.minSdk}")
-                        DetailRow(stringResource(R.string.apk_target_sdk), "API ${info.targetSdk}")
+                        DetailRow(stringResource(R.string.apk_min_sdk), FileUtils.sdkVersionLabel(info.minSdk))
+                        DetailRow(stringResource(R.string.apk_target_sdk), FileUtils.sdkVersionLabel(info.targetSdk))
                         DetailRow(stringResource(R.string.apk_permissions), "${info.permissions.size}")
+                        val signature = info.signingSha1
+                        DetailRow(
+                            stringResource(R.string.apk_signature),
+                            if (signature != null) {
+                                signature.chunked(4).joinToString(" ")
+                            } else {
+                                stringResource(R.string.apk_unsigned)
+                            },
+                        )
                     }
                 }
             }

@@ -141,6 +141,8 @@
     <string name="apk_min_sdk">最低 SDK</string>
     <string name="apk_target_sdk">目标 SDK</string>
     <string name="apk_permissions">权限数</string>
+    <string name="apk_signature">签名</string>
+    <string name="apk_unsigned">未签名</string>
     <string name="apk_parsing">解析中…</string>
 
     <!-- 抽屉 -->

@@ -2,6 +2,7 @@ package wanjie.quicklook.data
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -18,6 +19,7 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.compose.runtime.Immutable
 import java.io.File
+import java.security.MessageDigest
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import kotlin.math.ln
@@ -300,12 +302,19 @@ object FileUtils {
     }
 
     /**
-     * 解析 APK 文件的基本信息：应用名、包名、版本、SDK、权限与图标。
+     * 解析 APK 文件的基本信息：应用名、包名、版本、SDK、签名、权限与图标。
+     * 参考 MaterialFiles 与 ZhuFiler 的实现：
+     * - 必须携带 GET_SIGNATURES（P+ 加 GET_SIGNING_CERTIFICATES）让系统执行证书收集
+     * - 未签名 APK 在请求签名信息时解析会返回 null，此时去掉签名 flag 重试
      * 调用方应在 IO 线程执行。解析失败返回 null。
      */
     fun parseApk(context: Context, path: String): ApkInfo? {
         val pm = context.packageManager
-        val pkg = pm.getPackageArchiveInfo(path, PackageManager.GET_PERMISSIONS) ?: return null
+        var flags = PackageManager.GET_PERMISSIONS or PackageManager.GET_SIGNATURES
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            flags = flags or PackageManager.GET_SIGNING_CERTIFICATES
+        }
+        val pkg = getPackageArchiveInfoCompat(pm, path, flags) ?: return null
         val appInfo = pkg.applicationInfo ?: return null
         // getPackageArchiveInfo 不会设置 sourceDir/publicSourceDir，loadLabel/loadIcon 依赖它们，必须手动赋值
         appInfo.sourceDir = path
@@ -320,8 +329,102 @@ object FileUtils {
             minSdk = minSdk,
             targetSdk = appInfo.targetSdkVersion,
             permissions = pkg.requestedPermissions?.toList() ?: emptyList(),
+            signingSha1 = signingCertificateSha1(pkg),
             icon = runCatching { appInfo.loadIcon(pm) }.getOrNull(),
         )
+    }
+
+    /**
+     * 兼容不同 API 与未签名 APK 的 getPackageArchiveInfo 封装（参考 MaterialFiles）。
+     * @return null 表示 APK 完全无法解析
+     */
+    private fun getPackageArchiveInfoCompat(pm: PackageManager, path: String, flags: Int): PackageInfo? {
+        var pkg = queryArchiveInfo(pm, path, flags)
+        if (pkg == null) {
+            // 未签名 APK 在请求签名信息时会解析失败，去掉签名相关 flag 重试
+            @Suppress("DEPRECATION")
+            val flagsWithoutSigning = flags and (
+                PackageManager.GET_SIGNATURES.inv()
+                    and (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        PackageManager.GET_SIGNING_CERTIFICATES.inv()
+                    } else {
+                        -1
+                    })
+            )
+            if (flags != flagsWithoutSigning) {
+                pkg = queryArchiveInfo(pm, path, flagsWithoutSigning)
+            }
+        }
+        return pkg
+    }
+
+    /** API 33+ 使用 PackageInfoFlags 重载，避免 deprecated 旧重载。 */
+    private fun queryArchiveInfo(pm: PackageManager, path: String, flags: Int): PackageInfo? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.getPackageArchiveInfo(path, PackageManager.PackageInfoFlags.of(flags.toLong()))
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getPackageArchiveInfo(path, flags)
+        }
+    }
+
+    /** 提取 APK 主签名证书的 SHA-1 摘要（hex 小写）；未签名或无签名信息时返回 null。 */
+    private fun signingCertificateSha1(pkg: PackageInfo): String? {
+        val certs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            pkg.signingInfo?.apkContentsSigners
+        } else {
+            @Suppress("DEPRECATION")
+            pkg.signatures
+        } ?: return null
+        val cert = certs.firstOrNull() ?: return null
+        return runCatching {
+            MessageDigest.getInstance("SHA-1").digest(cert.toByteArray())
+                .joinToString("") { "%02x".format(it) }
+        }.getOrNull()
+    }
+
+    /** SDK 版本号 → Android 版本标签（参考 ZhuFiler 的映射表）。 */
+    fun sdkVersionLabel(sdk: Int): String {
+        return when (sdk) {
+            0 -> "API 0"
+            1 -> "Android 1.0"
+            2 -> "Android 1.1"
+            3 -> "Android 1.5 Cupcake"
+            4 -> "Android 1.6 Donut"
+            5 -> "Android 2.0 Eclair"
+            6 -> "Android 2.0.1 Eclair"
+            7 -> "Android 2.1 Eclair"
+            8 -> "Android 2.2 Froyo"
+            9 -> "Android 2.3 Gingerbread"
+            10 -> "Android 2.3.3 Gingerbread"
+            11 -> "Android 3.0 Honeycomb"
+            12 -> "Android 3.1 Honeycomb"
+            13 -> "Android 3.2 Honeycomb"
+            14 -> "Android 4.0 Ice Cream Sandwich"
+            15 -> "Android 4.0.3 Ice Cream Sandwich"
+            16 -> "Android 4.1 Jelly Bean"
+            17 -> "Android 4.2 Jelly Bean"
+            18 -> "Android 4.3 Jelly Bean"
+            19 -> "Android 4.4 KitKat"
+            20 -> "Android 4.4W KitKat"
+            21 -> "Android 5.0 Lollipop"
+            22 -> "Android 5.1 Lollipop"
+            23 -> "Android 6.0 Marshmallow"
+            24 -> "Android 7.0 Nougat"
+            25 -> "Android 7.1 Nougat"
+            26 -> "Android 8.0 Oreo"
+            27 -> "Android 8.1 Oreo"
+            28 -> "Android 9 Pie"
+            29 -> "Android 10"
+            30 -> "Android 11"
+            31 -> "Android 12"
+            32 -> "Android 12L"
+            33 -> "Android 13"
+            34 -> "Android 14"
+            35 -> "Android 15"
+            36 -> "Android 16"
+            else -> "API $sdk"
+        }
     }
 
     /**
@@ -364,8 +467,9 @@ data class AudioMetadata(
 }
 
 /**
- * APK 安装包解析结果：应用名、包名、版本、SDK 要求与权限列表。
+ * APK 安装包解析结果：应用名、包名、版本、SDK 要求、签名指纹与权限列表。
  * icon 为系统加载的 Drawable，由 UI 层转换为可渲染位图。
+ * signingSha1 为签名证书 SHA-1（hex），null 表示未签名或无法获取。
  */
 @Immutable
 data class ApkInfo(
@@ -376,5 +480,6 @@ data class ApkInfo(
     val minSdk: Int,
     val targetSdk: Int,
     val permissions: List<String>,
+    val signingSha1: String?,
     val icon: Drawable?,
 )
