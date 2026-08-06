@@ -13,7 +13,7 @@ coil = "2.7.0"
 media3 = "1.4.1"
 zip4j = "2.11.4"
 sevenZipJBinding = "16.02-2.03"
-amplituda = "2.2.0"
+amplituda = "2.3.1"
 junit = "4.13.2"
 
 [libraries]

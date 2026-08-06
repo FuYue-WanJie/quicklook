@@ -3,7 +3,7 @@ package wanjie.quicklook.data
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import linc.com.amplituda.Amplituda
+import com.linc.amplituda.Amplituda
 import java.io.File
 
 /**
