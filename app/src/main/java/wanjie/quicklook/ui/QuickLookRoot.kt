@@ -94,6 +94,7 @@ import wanjie.quicklook.ui.viewer.ArchiveViewerScreen
 import wanjie.quicklook.ui.viewer.ImageViewerScreen
 import wanjie.quicklook.ui.viewer.TextEditorScreen
 import wanjie.quicklook.ui.viewer.VideoPlayerScreen
+import wanjie.quicklook.ui.viewer.PdfViewerScreen
 import wanjie.quicklook.ExternalCategory
 import wanjie.quicklook.ExternalView
 import java.util.Base64
@@ -110,11 +111,13 @@ private object Routes {
     const val AUDIO = "audio/{path}/{name}"
     const val TEXT = "text/{path}/{name}"
     const val ARCHIVE = "archive/{path}/{name}"
+    const val PDF = "pdf/{path}/{name}"
     fun image(path: String, name: String) = "image/${enc(path)}/${enc(name)}"
     fun video(path: String, name: String) = "video/${enc(path)}/${enc(name)}"
     fun audio(path: String, name: String) = "audio/${enc(path)}/${enc(name)}"
     fun text(path: String, name: String) = "text/${enc(path)}/${enc(name)}"
     fun archive(path: String, name: String) = "archive/${enc(path)}/${enc(name)}"
+    fun pdf(path: String, name: String) = "pdf/${enc(path)}/${enc(name)}"
     // 使用 URL-safe Base64（无 +/、无填充），避免 / : 等字符破坏路由段匹配，
     // 也与 Navigation 是否自动解码无关，接收侧用 dec() 还原。
     private fun enc(s: String): String =
@@ -399,6 +402,7 @@ fun QuickLookRoot(initialExternalView: ExternalView? = null) {
                     onOpenAudio = { path, name -> navController.navigate(Routes.audio(path, name)) },
                     onOpenText = { path, name -> navController.navigate(Routes.text(path, name)) },
                     onOpenArchive = { path, name -> navController.navigate(Routes.archive(path, name)) },
+                    onOpenPdf = { path, name -> navController.navigate(Routes.pdf(path, name)) },
                 )
             }
             composable(Routes.RECENT) {
@@ -409,6 +413,7 @@ fun QuickLookRoot(initialExternalView: ExternalView? = null) {
                     onOpenAudio = { path, name -> navController.navigate(Routes.audio(path, name)) },
                     onOpenText = { path, name -> navController.navigate(Routes.text(path, name)) },
                     onOpenArchive = { path, name -> navController.navigate(Routes.archive(path, name)) },
+                    onOpenPdf = { path, name -> navController.navigate(Routes.pdf(path, name)) },
                 )
             }
             composable(Routes.SETTINGS) {
@@ -432,6 +437,7 @@ fun QuickLookRoot(initialExternalView: ExternalView? = null) {
                     onOpenText = { path, name -> navController.navigate(Routes.text(path, name)) },
                 )
             }
+            viewerRoute(Routes.PDF, navController) { p, n, b -> PdfViewerScreen(p, n, b) }
         }
     }
 }
@@ -445,6 +451,7 @@ private fun RecentScreen(
     onOpenAudio: (String, String) -> Unit = { _, _ -> },
     onOpenText: (String, String) -> Unit = { _, _ -> },
     onOpenArchive: (String, String) -> Unit = { _, _ -> },
+    onOpenPdf: (String, String) -> Unit = { _, _ -> },
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var files by remember { mutableStateOf<List<FileItem>>(emptyList()) }
@@ -463,6 +470,7 @@ private fun RecentScreen(
             FileCategory.AUDIO -> onOpenAudio(item.path, item.name)
             FileCategory.TEXT, FileCategory.CODE -> onOpenText(item.path, item.name)
             FileCategory.ARCHIVE -> onOpenArchive(item.path, item.name)
+            FileCategory.PDF -> onOpenPdf(item.path, item.name)
             else -> { /* 外部打开暂不支持，后续可扩展 */ }
         }
     }

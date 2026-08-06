@@ -126,6 +126,7 @@ fun BrowserScreen(
     onOpenAudio: (path: String, name: String) -> Unit = { _, _ -> },
     onOpenText: (path: String, name: String) -> Unit = { _, _ -> },
     onOpenArchive: (path: String, name: String) -> Unit = { _, _ -> },
+    onOpenPdf: (path: String, name: String) -> Unit = { _, _ -> },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -141,6 +142,7 @@ fun BrowserScreen(
                 is BrowserEvent.OpenAudio -> onOpenAudio(ev.path, ev.name)
                 is BrowserEvent.OpenText -> onOpenText(ev.path, ev.name)
                 is BrowserEvent.OpenArchive -> onOpenArchive(ev.path, ev.name)
+                is BrowserEvent.OpenPdf -> onOpenPdf(ev.path, ev.name)
             }
         }
     }

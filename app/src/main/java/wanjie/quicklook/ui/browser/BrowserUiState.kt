@@ -75,4 +75,5 @@ sealed interface BrowserEvent {
     data class OpenAudio(val path: String, val name: String) : BrowserEvent
     data class OpenText(val path: String, val name: String) : BrowserEvent
     data class OpenArchive(val path: String, val name: String) : BrowserEvent
+    data class OpenPdf(val path: String, val name: String) : BrowserEvent
 }

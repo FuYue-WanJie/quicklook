@@ -496,6 +496,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
             FileCategory.AUDIO -> BrowserEvent.OpenAudio(item.path, item.name)
             FileCategory.TEXT, FileCategory.CODE -> BrowserEvent.OpenText(item.path, item.name)
             FileCategory.ARCHIVE -> BrowserEvent.OpenArchive(item.path, item.name)
+            FileCategory.PDF -> BrowserEvent.OpenPdf(item.path, item.name)
             else -> { openExternal(item); return }
         }
         viewModelScope.launch { _events.send(event) }
