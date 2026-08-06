@@ -3,13 +3,12 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 文档主体：3:4 竖长、居中、左上带折角，避免顶满遮罩导致观感拉伸 -->
+    <!-- 文件夹主体：横长 40x22，居中 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M39,37 C39,35.3 40.3,34 42,34 L51,34 L55,38 L68,38 C69.7,38 71,39.3 71,41 L71,71 C71,72.7 69.7,74 68,74 L42,74 C40.3,74 39,72.7 39,71 Z" />
-    <!-- 装饰横线 -->
+        android:pathData="M34,47 C34,44.8 35.8,43 38,43 L70,43 C72.2,43 74,44.8 74,47 L74,61 C74,63.2 72.2,65 70,65 L38,65 C35.8,65 34,63.2 34,61 Z" />
+    <!-- 文件夹顶部标签 -->
     <path
         android:fillColor="#FFFFFF"
-        android:fillAlpha="0.6"
-        android:pathData="M45,47 L65,47 L65,51 L45,51 Z" />
+        android:pathData="M34,39 C34,37.9 34.9,37 36,37 L48,37 C49.1,37 50,37.9 50,39 L50,43 L34,43 Z" />
 </vector>
