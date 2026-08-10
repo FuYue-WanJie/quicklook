@@ -1,6 +1,6 @@
 # 快览 QuickLook
 
-快览是一款轻量级 Android 文件浏览器与快速查看器，支持浏览本地存储、常用目录与 SAF 目录，并内置图片、视频、音频、文本与压缩包五种查看器。
+快览是一款轻量级 Android 文件浏览器与快速查看器，支持浏览本地存储、常用目录与 SAF 目录，并内置图片、视频、音频、文本与压缩包五种查看器。支持 Shizuku 授权访问 /sdcard/ 目录。
 
 ## 功能特性
 
@@ -8,6 +8,7 @@
 - 文件管理：新建、重命名、删除、分享、跳转目录、全选 / 反选
 - 搜索与排序：关键字 / 正则搜索，名称、修改时间、大小、类型排序，文件夹优先
 - SAF 目录：通过系统文件选择器添加访问外部目录
+- Shizuku 授权：通过 Shizuku 授权后可访问 /sdcard/ 系统目录，无需授予 MANAGE_EXTERNAL_STORAGE 权限
 - 快速查看器：
   - 图片查看器
   - 视频播放器（Media3 / ExoPlayer）
@@ -24,6 +25,32 @@
 - Navigation Compose、DataStore、DocumentFile
 - Coil（图片加载）、Media3 / ExoPlayer（播放）
 - Zip4j、7-Zip-JBinding（压缩包）、Amplituda（音频波形）
+- Shizuku（可选授权访问系统目录）
+
+## Shizuku 使用说明
+
+Shizuku 是一种无需 Root 即可通过 ADB 或系统应用获取系统级权限的技术。
+
+### 前置条件
+
+1. 安装 [Shizuku](https://shizuku.rikka.app/) 应用
+2. 通过以下方式之一启动 Shizuku：
+   - **无线调试**：在 Shizuku 应用中点击「通过无线调试启动」
+   - **ADB**：连接电脑并执行 `adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/files/shizuku.sh`
+
+### 在快览中使用
+
+1. 确保 Shizuku 已启动
+2. 打开快览 → 设置 → Shizuku 授权
+3. 点击「授权」按钮，在弹出的对话框中确认授权
+4. 授权成功后，存储标签页将显示「Shizuku 存储」入口，可浏览 /sdcard/ 目录
+
+### 功能说明
+
+- 授权后可访问完整的 /sdcard/ 目录结构
+- 支持文件浏览、新建、重命名、删除等操作
+- 书签功能同样适用于 Shizuku 目录
+- 授权失效时需重新授权
 
 ## 参考项目
 

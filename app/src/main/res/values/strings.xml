@@ -55,11 +55,17 @@
     <!-- 设置 -->
     <string name="settings_show_hidden">显示隐藏文件</string>
     <string name="settings_show_hidden_desc">显示以点号开头的文件和文件夹</string>
+    <string name="settings_shizuku_title">Shizuku 授权</string>
+    <string name="settings_shizuku_granted">已授权，可通过 Shizuku 访问 /sdcard/</string>
+    <string name="settings_shizuku_not_granted">未授权，授权后可访问系统目录</string>
+    <string name="settings_shizuku_request">授权</string>
 
     <!-- Snackbar -->
     <string name="snack_deleted">已删除 %1$d 项</string>
     <string name="snack_granted">权限已授予</string>
     <string name="snack_denied">权限被拒绝</string>
+    <string name="snack_shizuku_granted">Shizuku 授权成功</string>
+    <string name="snack_shizuku_denied">Shizuku 授权被拒绝</string>
     <string name="snack_error_open_folder">无法打开文件夹</string>
     <string name="snack_folder_created">已创建文件夹「%1$s」</string>
     <string name="snack_folder_create_failed">创建文件夹失败</string>
@@ -112,6 +118,25 @@
     <string name="snack_jump_saf_unsupported">SAF 目录下不支持跳转</string>
     <string name="snack_search_saf_unsupported">SAF 目录下不支持搜索</string>
     <string name="snack_saf_readonly">SAF 目录为只读，不支持新建</string>
+
+    <!-- Shizuku 安全警告 -->
+    <string name="shizuku_warning_title">安全操作警告</string>
+    <string name="shizuku_warning_message">即将通过 Shizuku 执行系统命令操作：%1$s\n\n目标：%2$s%3$s\n\n此操作将绕过系统权限限制，请谨慎确认。</string>
+    <string name="shizuku_warning_delete">删除</string>
+    <string name="shizuku_warning_rename">重命名</string>
+    <string name="shizuku_warning_create">创建</string>
+    <string name="shizuku_warning_install">安装应用</string>
+    <string name="shizuku_warning_uninstall">卸载应用</string>
+    <string name="shizuku_warning_continue">继续操作</string>
+    <string name="shizuku_warning_cancel">取消</string>
+    <string name="shizuku_warning_multiple">注意：此操作将删除多个文件/文件夹，且无法恢复。</string>
+    <string name="shizuku_warning_uninstall_msg">注意：此操作将卸载应用，卸载后数据将丢失。</string>
+
+    <!-- APK 安装/卸载 -->
+    <string name="snack_apk_installed">应用安装成功</string>
+    <string name="snack_apk_install_failed">应用安装失败</string>
+    <string name="snack_app_uninstalled">已卸载「%1$s」</string>
+    <string name="snack_app_uninstall_failed">应用卸载失败</string>
 
     <!-- 溢出菜单 -->
     <string name="action_more">更多</string>

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.BookmarkRemove
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.Delete
@@ -56,6 +57,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -337,14 +339,14 @@ fun BrowserScreen(
                 title = stringResource(R.string.dialog_new_folder_title),
                 hint = stringResource(R.string.dialog_new_folder_hint),
                 confirmText = stringResource(R.string.dialog_create),
-                onConfirm = { name -> viewModel.createFolder(name) },
+                onConfirm = { name -> viewModel.confirmCreateFolder(name) },
                 onDismiss = { viewModel.dismissDialog() },
             )
             is BrowserDialog.NewFile -> NameInputDialog(
                 title = stringResource(R.string.dialog_new_file_title),
                 hint = stringResource(R.string.dialog_new_file_hint),
                 confirmText = stringResource(R.string.dialog_create),
-                onConfirm = { name -> viewModel.createFile(name) },
+                onConfirm = { name -> viewModel.confirmCreateFile(name) },
                 onDismiss = { viewModel.dismissDialog() },
             )
             is BrowserDialog.Rename -> NameInputDialog(
@@ -352,7 +354,14 @@ fun BrowserScreen(
                 hint = stringResource(R.string.dialog_rename_hint),
                 initial = dialog.item.name,
                 confirmText = stringResource(R.string.dialog_rename),
-                onConfirm = { name -> viewModel.renameCurrent(name) },
+                onConfirm = { name -> viewModel.confirmRename(name) },
+                onDismiss = { viewModel.dismissDialog() },
+            )
+            is BrowserDialog.ShizukuWarning -> ShizukuWarningDialog(
+                action = dialog.action,
+                targetName = dialog.targetName,
+                detail = dialog.detail,
+                onConfirm = { viewModel.confirmShizukuAction(dialog.action, dialog.targetName, dialog.detail) },
                 onDismiss = { viewModel.dismissDialog() },
             )
             is BrowserDialog.Details -> DetailsDialog(
@@ -433,7 +442,7 @@ private fun OverflowActionsMenu(
                 leadingIcon = { Icon(Icons.Rounded.Storage, null) },
                 onClick = { expanded = false; onAddSaf() },
             )
-            // 添加 / 移除书签（仅文件路径模式）
+            // 添加 / 移除书签（文件路径模式和 Shizuku 模式）
             if (!state.isSafMode && state.currentPath.isNotBlank()) {
                 if (state.currentPathIsBookmarked) {
                     DropdownMenuItem(
@@ -962,4 +971,82 @@ private fun SearchResultItem(
             )
         }
     }
+}
+
+/** Shizuku 安全操作警告对话框 */
+@Composable
+private fun ShizukuWarningDialog(
+    action: ShizukuAction,
+    targetName: String,
+    detail: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val actionText = when (action) {
+        ShizukuAction.DELETE, ShizukuAction.DELETE_MULTI -> stringResource(R.string.shizuku_warning_delete)
+        ShizukuAction.RENAME -> stringResource(R.string.shizuku_warning_rename)
+        ShizukuAction.CREATE_FOLDER, ShizukuAction.CREATE_FILE -> stringResource(R.string.shizuku_warning_create)
+        ShizukuAction.INSTALL -> stringResource(R.string.shizuku_warning_install)
+        ShizukuAction.UNINSTALL -> stringResource(R.string.shizuku_warning_uninstall)
+    }
+    val warningMsg = if (targetName.isNotBlank()) {
+        stringResource(R.string.shizuku_warning_message, actionText, targetName, if (detail.isNotBlank()) "\n路径: $detail" else "")
+    } else {
+        stringResource(R.string.shizuku_warning_message, actionText, detail, "")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Text(stringResource(R.string.shizuku_warning_title))
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = warningMsg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                if (action == ShizukuAction.DELETE_MULTI) {
+                    Text(
+                        text = stringResource(R.string.shizuku_warning_multiple),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                if (action == ShizukuAction.UNINSTALL) {
+                    Text(
+                        text = stringResource(R.string.shizuku_warning_uninstall_msg),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+            ) {
+                Text(stringResource(R.string.shizuku_warning_continue))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.shizuku_warning_cancel))
+            }
+        },
+    )
 }

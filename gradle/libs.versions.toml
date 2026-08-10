@@ -15,6 +15,7 @@ zip4j = "2.11.4"
 sevenZipJBinding = "16.02-2.03"
 amplituda = "2.3.1"
 junit = "4.13.2"
+shizuku = "13.1.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,8 @@ zip4j = { group = "net.lingala.zip4j", name = "zip4j", version.ref = "zip4j" }
 sevenZipJBinding = { group = "com.sorrowblue.sevenzipjbinding", name = "7-Zip-JBinding-4Android", version.ref = "sevenZipJBinding" }
 amplituda = { group = "com.github.lincollincol", name = "Amplituda", version.ref = "amplituda" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
+shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

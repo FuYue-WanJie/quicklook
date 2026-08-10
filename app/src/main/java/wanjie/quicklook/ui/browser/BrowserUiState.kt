@@ -21,6 +21,17 @@ sealed interface BrowserDialog {
     data class JumpToPath(val initial: String) : BrowserDialog
     /** 移除书签确认：[name] 用于文案，[id] 用于定位 */
     data class RemoveBookmark(val name: String, val id: String) : BrowserDialog
+    /** Shizuku 安全操作警告 */
+    data class ShizukuWarning(
+        val action: ShizukuAction,
+        val targetName: String,
+        val detail: String = "",
+    ) : BrowserDialog
+}
+
+/** Shizuku 操作类型 */
+enum class ShizukuAction {
+    DELETE, DELETE_MULTI, RENAME, CREATE_FOLDER, CREATE_FILE, INSTALL, UNINSTALL
 }
 
 /** 搜索范围 */
@@ -36,6 +47,8 @@ data class BrowserUiState(
     val currentPath: String = "",
     /** 当前路径是否为 SAF 模式（currentRoot.isSaf） */
     val isSafMode: Boolean = false,
+    /** 当前路径是否通过 Shizuku 模式访问 */
+    val isShizukuMode: Boolean = false,
     val breadcrumbs: List<BreadcrumbSegment> = emptyList(),
     val items: List<FileItem> = emptyList(),
     val filteredItems: List<FileItem> = emptyList(),

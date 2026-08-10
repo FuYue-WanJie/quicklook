@@ -87,6 +87,8 @@ dependencies {
     implementation(libs.zip4j)
     implementation(libs.sevenZipJBinding)
     implementation(libs.amplituda)
+    implementation(libs.shizuku.api)
+    compileOnly(libs.shizuku.provider)
 
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)

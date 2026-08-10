@@ -22,6 +22,7 @@ class SettingsStore(private val context: Context) {
         val SHOW_HIDDEN = booleanPreferencesKey("show_hidden")
         val SORT_ORDER = intPreferencesKey("sort_order")
         val FOLDERS_FIRST = booleanPreferencesKey("folders_first")
+        val SHIZUKU_GUIDED = booleanPreferencesKey("shizuku_guided")
     }
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { p ->
@@ -38,6 +39,8 @@ class SettingsStore(private val context: Context) {
             foldersFirst = p[Keys.FOLDERS_FIRST] ?: true,
         )
     }
+
+    val shizukuGuided: Flow<Boolean> = context.dataStore.data.map { it[Keys.SHIZUKU_GUIDED] ?: false }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[Keys.THEME] = mode.ordinal }
@@ -56,5 +59,9 @@ class SettingsStore(private val context: Context) {
             it[Keys.SORT_ORDER] = config.order.ordinal
             it[Keys.FOLDERS_FIRST] = config.foldersFirst
         }
+    }
+
+    suspend fun setShizukuGuided(guided: Boolean) {
+        context.dataStore.edit { it[Keys.SHIZUKU_GUIDED] = guided }
     }
 }

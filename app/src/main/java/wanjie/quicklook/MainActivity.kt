@@ -14,6 +14,7 @@ import wanjie.quicklook.data.SettingsStore
 import wanjie.quicklook.ui.QuickLookRoot
 import wanjie.quicklook.ui.theme.QuickLookTheme
 import wanjie.quicklook.ui.theme.ThemeMode
+import rikka.shizuku.Shizuku
 
 class MainActivity : ComponentActivity() {
 
@@ -23,6 +24,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // 初始化 Shizuku
+        Shizuku.addBinderReceivedListenerSticky(object : rikka.shizuku.Shizuku.OnBinderReceivedListener {
+            override fun onBinderReceived() {}
+        })
+
         externalView = parseViewIntent(intent)
 
         val settings = SettingsStore(applicationContext)

@@ -2,12 +2,14 @@ package wanjie.quicklook.ui.browser
 
 import android.app.Application
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.core.net.toUri
+import rikka.shizuku.Shizuku
 import wanjie.quicklook.QuickLookApp
 import wanjie.quicklook.R
 import wanjie.quicklook.data.Bookmark
@@ -16,6 +18,7 @@ import wanjie.quicklook.data.FileItem
 import wanjie.quicklook.data.FileRepository
 import wanjie.quicklook.data.FileUtils
 import wanjie.quicklook.data.SettingsStore
+import wanjie.quicklook.data.ShizukuManager
 import wanjie.quicklook.data.SortConfig
 import wanjie.quicklook.data.StorageRoot
 import kotlinx.coroutines.channels.Channel
@@ -45,6 +48,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
     private val app = application as QuickLookApp
     private val bookmarkStore = app.bookmarkStore
     private val safManager = app.safManager
+    private val shizukuManager = ShizukuManager(application)
 
     private val _uiState = MutableStateFlow(BrowserUiState())
     val uiState: StateFlow<BrowserUiState> = _uiState.asStateFlow()
@@ -54,6 +58,26 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
 
     // 搜索 Job：用于防抖取消上一次未完成的搜索
     private var searchJob: Job? = null
+
+    private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
+        if (requestCode == 1) {
+            if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                viewModelScope.launch {
+                    snack(R.string.snack_shizuku_granted)
+                    val roots = repo.roots()
+                    _uiState.update { it.copy(roots = roots) }
+                    if (_uiState.value.currentRoot == null) {
+                        val shizukuRoot = roots.firstOrNull { it.isShizuku }
+                        if (shizukuRoot != null) refresh(shizukuRoot, null)
+                    }
+                }
+            } else {
+                viewModelScope.launch {
+                    snack(R.string.snack_shizuku_denied)
+                }
+            }
+        }
+    }
 
     /** 发送 Snackbar 事件的小工具，避免重复 getApplication().getString 样板 */
     private fun snack(resId: Int, vararg args: Any) {
@@ -89,6 +113,9 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
     init {
         val roots = repo.roots()
         _uiState.update { it.copy(roots = roots) }
+
+        // 注册 Shizuku 权限结果监听
+        Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
 
         if (checkPermission()) {
             _uiState.update { it.copy(loadState = BrowserLoadState.Loading) }
@@ -142,6 +169,17 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
             snack(R.string.snack_denied)
         }
     }
+
+    fun requestShizukuPermission() {
+        shizukuManager.requestPermission()
+    }
+
+    fun checkShizukuPermission(): Boolean {
+        return shizukuManager.isGranted
+    }
+
+    val shizukuAvailable: Boolean get() = shizukuManager.isAvailable
+    val shizukuGranted: Boolean get() = shizukuManager.isGranted
 
     fun selectRoot(root: StorageRoot) = viewModelScope.launch {
         refresh(root, null)
@@ -421,18 +459,36 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteSelected() = viewModelScope.launch {
         val state = _uiState.value
-        val items = state.items.filter { it.uri in state.selectedUris }
-        val n = repo.delete(items)
-        snack(R.string.snack_deleted, n)
-        exitSelection()
-        refresh(state.currentRoot ?: return@launch, state.currentPath.ifBlank { null })
+        if (state.isShizukuMode && repo.isSensitivePath(state.currentPath)) {
+            val count = state.selectedUris.size
+            _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+                action = ShizukuAction.DELETE_MULTI,
+                targetName = "共 $count 个文件/文件夹",
+                detail = "选中项",
+            )) }
+        } else {
+            val items = state.items.filter { it.uri in state.selectedUris }
+            val n = repo.delete(items, state.isShizukuMode)
+            snack(R.string.snack_deleted, n)
+            exitSelection()
+            refresh(state.currentRoot ?: return@launch, state.currentPath.ifBlank { null })
+        }
     }
 
     fun showNewFolderDialog() {
-        _uiState.update { it.copy(dialog = BrowserDialog.NewFolder) }
+        val state = _uiState.value
+        if (state.isShizukuMode && repo.isSensitivePath(state.currentPath)) {
+            _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+                action = ShizukuAction.CREATE_FOLDER,
+                targetName = "",
+                detail = state.currentPath,
+            )) }
+        } else {
+            _uiState.update { it.copy(dialog = BrowserDialog.NewFolder) }
+        }
     }
 
-    fun createFolder(name: String) = createEntry(
+    fun confirmCreateFolder(name: String) = createEntry(
         isFolder = true,
         name = name,
         okSnack = R.string.snack_folder_created,
@@ -440,17 +496,26 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
     )
 
     fun showNewFileDialog() {
-        _uiState.update { it.copy(dialog = BrowserDialog.NewFile) }
+        val state = _uiState.value
+        if (state.isShizukuMode && repo.isSensitivePath(state.currentPath)) {
+            _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+                action = ShizukuAction.CREATE_FILE,
+                targetName = "",
+                detail = state.currentPath,
+            )) }
+        } else {
+            _uiState.update { it.copy(dialog = BrowserDialog.NewFile) }
+        }
     }
 
-    fun createFile(name: String) = createEntry(
+    fun confirmCreateFile(name: String) = createEntry(
         isFolder = false,
         name = name,
         okSnack = R.string.snack_file_created,
         failSnack = R.string.snack_file_create_failed,
     )
 
-    private fun createEntry(isFolder: Boolean, name: String, okSnack: Int, failSnack: Int) = viewModelScope.launch {
+    private fun createEntry(isFolder: Boolean, name: String, okSnack: Int, failSnack: Int, isShizuku: Boolean = false) = viewModelScope.launch {
         val state = _uiState.value
         val root = state.currentRoot ?: return@launch
         if (root.isSaf) {
@@ -458,21 +523,40 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
             return@launch
         }
         val dir = File(state.currentPath.ifBlank { root.file?.absolutePath ?: return@launch })
-        val ok = if (isFolder) repo.createFolder(dir, name) else repo.createFile(dir, name)
+        val ok = if (isFolder) repo.createFolder(dir, name, isShizuku) else repo.createFile(dir, name, isShizuku)
         if (ok) snack(okSnack, name) else snack(failSnack)
         dismissAndRefresh()
     }
 
     fun showRenameDialog(item: FileItem) {
-        _uiState.update { it.copy(dialog = BrowserDialog.Rename(item)) }
+        val state = _uiState.value
+        if (state.isShizukuMode && repo.isSensitivePath(item.path)) {
+            _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+                action = ShizukuAction.RENAME,
+                targetName = item.name,
+                detail = item.path,
+            )) }
+        } else {
+            _uiState.update { it.copy(dialog = BrowserDialog.Rename(item)) }
+        }
     }
 
-    fun renameCurrent(newName: String) = viewModelScope.launch {
+    fun confirmRename(newName: String) = viewModelScope.launch {
         val state = _uiState.value
-        val item = (state.dialog as? BrowserDialog.Rename)?.item ?: return@launch
-        val ok = repo.rename(item, newName)
-        if (ok) snack(R.string.snack_rename_success, newName) else snack(R.string.snack_rename_failed)
-        dismissAndRefresh()
+        val warning = state.dialog as? BrowserDialog.ShizukuWarning
+        if (warning != null) {
+            _uiState.update { it.copy(dialog = BrowserDialog.None) }
+            val item = state.items.firstOrNull { it.name == warning.targetName } ?: return@launch
+            val ok = repo.rename(item, newName, true)
+            if (ok) snack(R.string.snack_rename_success, newName) else snack(R.string.snack_rename_failed)
+            dismissAndRefresh()
+        } else {
+            // 普通重命名对话框
+            val renameDialog = state.dialog as? BrowserDialog.Rename ?: return@launch
+            val ok = repo.rename(renameDialog.item, newName, state.isShizukuMode)
+            if (ok) snack(R.string.snack_rename_success, newName) else snack(R.string.snack_rename_failed)
+            dismissAndRefresh()
+        }
     }
 
     fun showDetailsDialog(item: FileItem) {
@@ -480,9 +564,60 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun deleteSingle(item: FileItem) = viewModelScope.launch {
-        val ok = repo.deleteSingle(item)
-        snack(R.string.snack_deleted, if (ok) 1 else 0)
-        dismissAndRefresh()
+        val state = _uiState.value
+        if (state.isShizukuMode && repo.isSensitivePath(item.path)) {
+            _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+                action = ShizukuAction.DELETE,
+                targetName = item.name,
+                detail = item.path,
+            )) }
+        } else {
+            val ok = repo.deleteSingle(item, state.isShizukuMode)
+            snack(R.string.snack_deleted, if (ok) 1 else 0)
+            dismissAndRefresh()
+        }
+    }
+
+    fun confirmShizukuAction(action: ShizukuAction, targetName: String, detail: String) = viewModelScope.launch {
+        _uiState.update { it.copy(dialog = BrowserDialog.None) }
+        when (action) {
+            ShizukuAction.DELETE -> {
+                val state = _uiState.value
+                val item = state.items.firstOrNull { it.name == targetName } ?: return@launch
+                val ok = repo.deleteSingle(item, true)
+                snack(R.string.snack_deleted, if (ok) 1 else 0)
+                dismissAndRefresh()
+            }
+            ShizukuAction.DELETE_MULTI -> {
+                val state = _uiState.value
+                val items = state.items.filter { it.uri in state.selectedUris }
+                val n = repo.delete(items, true)
+                snack(R.string.snack_deleted, n)
+                exitSelection()
+                refresh(state.currentRoot ?: return@launch, state.currentPath.ifBlank { null })
+            }
+            ShizukuAction.RENAME -> {
+                val state = _uiState.value
+                val item = state.items.firstOrNull { it.name == targetName } ?: return@launch
+                _uiState.update { it.copy(dialog = BrowserDialog.Rename(item)) }
+            }
+            ShizukuAction.CREATE_FOLDER -> {
+                val state = _uiState.value
+                _uiState.update { it.copy(dialog = BrowserDialog.NewFolder) }
+            }
+            ShizukuAction.CREATE_FILE -> {
+                val state = _uiState.value
+                _uiState.update { it.copy(dialog = BrowserDialog.NewFile) }
+            }
+            ShizukuAction.INSTALL -> {
+                val ok = shizukuManager.installApk(detail)
+                if (ok) snack(R.string.snack_apk_installed) else snack(R.string.snack_apk_install_failed)
+            }
+            ShizukuAction.UNINSTALL -> {
+                val ok = shizukuManager.uninstallApp(detail)
+                if (ok) snack(R.string.snack_app_uninstalled, targetName) else snack(R.string.snack_app_uninstall_failed)
+            }
+        }
     }
 
     fun dismissDialog() {
@@ -490,6 +625,12 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun openFile(item: FileItem) {
+        val state = _uiState.value
+        // Shizuku 模式下 APK 文件直接静默安装
+        if (state.isShizukuMode && item.category == FileCategory.APP) {
+            confirmInstallApk(item.path)
+            return
+        }
         val event = when (item.category) {
             FileCategory.IMAGE -> BrowserEvent.OpenImage(item.path, item.name)
             FileCategory.VIDEO -> BrowserEvent.OpenVideo(item.path, item.name)
@@ -500,6 +641,23 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
             else -> { openExternal(item); return }
         }
         viewModelScope.launch { _events.send(event) }
+    }
+
+    fun confirmInstallApk(apkPath: String) {
+        val state = _uiState.value
+        _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+            action = ShizukuAction.INSTALL,
+            targetName = apkPath.substringAfterLast('/'),
+            detail = apkPath,
+        )) }
+    }
+
+    fun confirmUninstall(packageName: String) {
+        _uiState.update { it.copy(dialog = BrowserDialog.ShizukuWarning(
+            action = ShizukuAction.UNINSTALL,
+            targetName = packageName,
+            detail = packageName,
+        )) }
     }
 
     fun openExternal(item: FileItem) {
@@ -611,6 +769,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun refreshFile(root: StorageRoot, path: String?) {
         val dir = path?.let { File(it) } ?: root.file ?: return
+        val isShizuku = root.isShizuku
         if (!dir.exists() || !dir.isDirectory) {
             _uiState.update {
                 it.copy(
@@ -622,7 +781,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
         }
         _uiState.update { it.copy(loadState = BrowserLoadState.Loading, currentRoot = root) }
 
-        val items = repo.listDirectory(dir, _uiState.value.sortConfig, _uiState.value.showHidden)
+        val items = repo.listDirectory(dir, _uiState.value.sortConfig, _uiState.value.showHidden, isShizuku)
         val crumbs = repo.breadcrumbs(root.file ?: dir, dir)
 
         val currentPath = dir.absolutePath
@@ -635,6 +794,7 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
                 currentRoot = root,
                 currentPath = currentPath,
                 isSafMode = false,
+                isShizukuMode = isShizuku,
                 breadcrumbs = crumbs,
                 items = items,
                 itemCount = items.size,
@@ -692,5 +852,10 @@ class BrowserViewModel(application: Application) : AndroidViewModel(application)
         val filtered = if (q.isEmpty()) state.items
         else state.items.filter { it.name.contains(q, ignoreCase = true) }
         _uiState.update { it.copy(filteredItems = filtered) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
     }
 }

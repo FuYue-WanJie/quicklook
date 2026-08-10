@@ -26,6 +26,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.BookmarkBorder
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CreateNewFolder
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.History
@@ -541,6 +546,10 @@ private fun SettingsScreen(
     viewModel: BrowserViewModel = viewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val shizukuAvailable = viewModel.shizukuAvailable
+    val shizukuGranted = viewModel.shizukuGranted
+
     Scaffold(
         topBar = {
             LargeTopAppBar(
@@ -566,6 +575,35 @@ private fun SettingsScreen(
                 },
             )
             HorizontalDivider()
+
+            if (shizukuAvailable) {
+                androidx.compose.material3.ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_shizuku_title)) },
+                    supportingContent = {
+                        Text(
+                            if (shizukuGranted) stringResource(R.string.settings_shizuku_granted)
+                            else stringResource(R.string.settings_shizuku_not_granted)
+                        )
+                    },
+                    trailingContent = {
+                        if (!shizukuGranted) {
+                            androidx.compose.material3.Button(
+                                onClick = { viewModel.requestShizukuPermission() },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp, 4.dp),
+                            ) {
+                                Text(stringResource(R.string.settings_shizuku_request))
+                            }
+                        } else {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    },
+                )
+                HorizontalDivider()
+            }
         }
     }
 }
